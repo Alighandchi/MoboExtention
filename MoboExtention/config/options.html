@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>MoboVPN - Settings</title>
+  <script src="browser@4.js"></script>
+  <script src="Sortable.min.js"></script>
+  <script src="options.js" defer></script>
+  <style>
+    :root {
+      --bg-primary: #f9fafb;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f3f4f6;
+      --text-primary: #111827;
+      --text-secondary: #6b7280;
+      --text-tertiary: #9ca3af;
+      --border-primary: #e5e7eb;
+      --border-secondary: #d1d5db;
+      --gradient-from: #7c3aed;
+      --gradient-to: #6366f1;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+      --shadow-md: 0 4px 12px rgba(124, 58, 237, 0.15);
+      --shadow-lg: 0 4px 12px rgba(124, 58, 237, 0.25);
+    }
+    
+    body.dark {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary: #334155;
+      --text-primary: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-tertiary: #94a3b8;
+      --border-primary: #334155;
+      --border-secondary: #475569;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+      --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      transition: background-color 0.2s ease, color 0.2s ease;
+      min-height: 100vh;
+    }
+
+    .scrollable-content {
+      overflow-y: auto;
+      max-height: calc(100vh - 120px);
+      padding-right: 15px;
+    }
+
+    aside {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    main {
+      height: 100vh;
+    }
+    .sortable-ghost {
+      opacity: 0.4;
+      background-color: var(--bg-tertiary);
+      border-radius: 0.5rem;
+    }
+    .active-tab {
+      background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+      color: white;
+      border-radius: 0.375rem;
+      padding: 0.5rem 1rem;
+    }
+    .gradient-bg {
+      background: linear-gradient(135deg, var(--gradient-from) 0%, var(--gradient-to) 100%);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--gradient-from) 0%, var(--gradient-to) 100%);
+      transition: all 0.2s ease;
+    }
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+    .sidebar-link {
+      transition: all 0.2s ease;
+      padding: 0.625rem 0.75rem;
+      border-radius: 0.5rem;
+      position: relative;
+    }
+    .sidebar-link:hover {
+      background-color: rgba(124, 58, 237, 0.1);
+      color: var(--gradient-from);
+    }
+    .sidebar-link.active-tab::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 70%;
+      background: var(--gradient-from);
+      border-radius: 0 2px 2px 0;
+    }
+    details summary::marker {
+      color: var(--gradient-from);
+    }
+    input:focus {
+      outline: none;
+      border-color: var(--gradient-from);
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+    }
+    
+    body.dark .sun-icon {
+      display: none;
+    }
+    
+    body.dark .moon-icon {
+      display: block !important;
+    }
+    
+    body:not(.dark) .moon-icon {
+      display: none;
+    }
+    
+    body.dark .sidebar-link:hover {
+      background-color: rgba(124, 58, 237, 0.2);
+    }
+  </style>
+</head>
+
+<body class="font-sans min-h-screen flex">
+  <aside class="w-64 p-6 border-r flex flex-col justify-between" style="background-color: var(--bg-secondary); border-color: var(--border-primary); box-shadow: var(--shadow-sm);">
+    <div>
+      <div class="flex items-center justify-center mb-8">
+        <img src="banner_wide.png" class="h-21" />
+      </div>
+
+      <nav class="space-y-1 text-sm mb-8">
+        <h3 class="text-xs uppercase mb-3 font-semibold px-3" style="color: var(--text-tertiary);">Configuration</h3>
+        <button data-tab="get-started" class="w-full text-left sidebar-link active-tab flex items-center gap-3">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          <span>Get Started</span>
+        </button>
+        <button data-tab="proxies" class="w-full text-left sidebar-link flex items-center gap-3" style="color: var(--text-secondary);">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+          </svg>
+          <span>Proxy List</span>
+        </button>
+        <button data-tab="settings" class="w-full text-left sidebar-link flex items-center gap-3" style="color: var(--text-secondary);">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <span>Settings</span>
+        </button>
+      </nav>
+      <nav class="space-y-1 text-sm mb-6">
+        <h3 class="text-xs uppercase mb-3 font-semibold px-3" style="color: var(--text-tertiary);">External Links</h3>
+        <a href="https://cloud.imobotech.com/" target="_blank" class="flex items-center gap-3 sidebar-link" style="color: var(--text-secondary);">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+          </svg>
+          <span>MoboCloud</span>
+          <svg class="w-3 h-3 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        </a>
+        <a href="https://imobotech.com/" target="_blank" class="flex items-center gap-3 sidebar-link" style="color: var(--text-secondary);">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>Website</span>
+          <svg class="w-3 h-3 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        </a>
+        <a href="https://status.imobotech.workers.dev/" target="_blank" class="flex items-center gap-3 sidebar-link" style="color: var(--text-secondary);">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          <span>Server Status</span>
+          <svg class="w-3 h-3 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        </a>
+      </nav>
+    </div>
+
+    <div class="space-y-2 text-sm">
+      <button id="themeToggle" class="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg border transition-all" style="border-color: var(--border-primary); background-color: var(--bg-tertiary);">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--text-primary);">
+          <path class="sun-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+          <path class="moon-icon hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+        </svg>
+        <span class="theme-text">Light Mode</span>
+      </button>
+      <a href="https://imobotech.com/site" target="_blank" class="block w-full text-center border py-2 rounded-lg transition-all" style="border-color: var(--border-primary); color: var(--text-primary);">Dashboard</a>
+      <a href="https://t.me/mobo_sup" target="_blank" class="block w-full text-center btn-primary text-white py-2 rounded-lg font-medium">Get Started</a>
+    </div>
+  </aside>
+
+  <main class="flex-1 p-8 overflow-auto space-y-6" style="background-color: var(--bg-primary);">
+    <section id="tab-get-started">
+      <h1 class="text-3xl font-bold mb-2" style="color: var(--text-primary);">Getting Started</h1>
+      <p class="mb-6" style="color: var(--text-secondary);">Follow these steps to set up and use the MoboVPN proxy service.</p>
+
+      <div class="p-6 rounded-xl border space-y-6" style="background-color: var(--bg-secondary); border-color: var(--border-primary); box-shadow: var(--shadow-sm);">
+        <h2 class="text-lg font-semibold mb-4" style="color: var(--text-primary);">How to Start the Service</h2>
+        <p class="mb-4" style="color: var(--text-secondary);">To turn on the proxy service, follow these instructions:</p>
+        <ol class="list-decimal list-inside space-y-2">
+          <li>Open the folder where the MoboVPN extension is located.</li>
+          <li>Double-click the file named <strong>Manage Service.vbs</strong>.</li>
+          <li>A pop-up window will appear asking you to confirm. Click <strong>Yes</strong>.</li>
+          <li>Another window will ask for your <strong>Token ID</strong>. Enter your token and click <strong>OK</strong>.</li>
+          <li>The Proxy service will start automatically in the background, and you can now use the extension.</li>
+        </ol>
+
+        <h2 class="text-lg font-semibold mt-6" style="color: var(--text-primary);">How to Stop the Service</h2>
+        <p class="mb-4" style="color: var(--text-secondary);">To turn off the proxy service, follow these instructions:</p>
+        <ol class="list-decimal list-inside space-y-2">
+          <li>Open the same folder where the MoboVPN extension is located.</li>
+          <li>Double-click the file named <strong>Manage Service.vbs</strong> again.</li>
+          <li>When the pop-up window appears asking you to confirm, click <strong>No</strong>.</li>
+          <li>The Proxy service will be stopped automatically.</li>
+        </ol>
+      </div>
+    </section>
+
+    <section id="tab-proxies" class="hidden">
+      <h1 class="text-3xl font-bold mb-2" style="color: var(--text-primary);">Proxy List</h1>
+      <p class="mb-6" style="color: var(--text-secondary);">Manage your proxy configurations. Add, edit, reorder, or delete proxies as needed.</p>
+
+      <div class="p-6 rounded-xl border" style="background-color: var(--bg-secondary); border-color: var(--border-primary); box-shadow: var(--shadow-sm);">
+        <input id="proxyInput" placeholder="Enter full proxy string to add (protocol://user:pass@ip:port)" class="w-full text-sm px-4 py-2.5 mb-4 rounded-lg border transition-all" style="background-color: var(--bg-tertiary); color: var(--text-primary); border-color: var(--border-primary);" />
+        <div id="proxyContainer" class="space-y-4"></div>
+
+        <div class="flex justify-between mt-6 items-center space-x-4">
+          <button id="addProxyRow" class="px-4 py-2 rounded-lg border transition-all hover:opacity-80" style="background-color: var(--bg-tertiary); color: var(--text-primary); border-color: var(--border-primary);">+ Add new proxy</button>
+          <button id="saveChanges" class="btn-primary px-6 py-2 rounded-lg text-white font-medium">Save Changes</button>
+          <span id="savedStatus" class="font-medium hidden" style="color: #10b981;">✓ Saved</span>
+        </div>
+
+        <div class="flex justify-between mt-4 items-center space-x-4">
+          <div class="flex gap-2">
+            <label for="importFile" class="px-4 py-2 rounded-lg cursor-pointer text-sm border transition-all hover:opacity-80" style="background-color: var(--bg-secondary); color: var(--text-primary); border-color: var(--border-primary);">
+              Import
+              <input type="file" id="importFile" accept=".json" class="hidden" />
+            </label>
+            <button id="exportBtn" class="px-4 py-2 rounded-lg text-sm border transition-all hover:opacity-80" style="background-color: var(--bg-secondary); color: var(--text-primary); border-color: var(--border-primary);">Export</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-faq" class="hidden">
+      <div class="space-y-6 text-sm px-6 py-4 rounded-xl border" style="background-color: var(--bg-secondary); color: var(--text-primary); border-color: var(--border-primary); box-shadow: var(--shadow-sm);">
+        <h2 class="text-lg font-semibold">Getting Started</h2>
+
+        <details class="group">
+          <summary class="cursor-pointer font-medium" style="color: var(--gradient-from);">How do I add a new proxy?</summary>
+          <div class="mt-2 ml-4">
+            You can add proxies manually using the <strong>“Add New Proxy”</strong> button. Enter each field separately or paste a full proxy string in one of these formats:
+            <ul class="list-disc list-inside mt-1">
+              <li>protocol://ip:port</li>
+              <li>protocol://user:pass@ip:port</li>
+              <li>protocol://ip:port:user:pass</li>
+            </ul>
+          </div>
+        </details>
+
+        <details class="group">
+          <summary class="cursor-pointer font-medium" style="color: var(--gradient-from);">Can I import and export proxies?</summary>
+          <div class="mt-2 ml-4">
+            Yes! Use the <strong>Import</strong> and <strong>Export</strong> buttons on the Manage Proxies page to back up or transfer your proxies. Data is saved as a JSON file.
+          </div>
+        </details>
+
+        <h2 class="text-lg font-semibold mt-6">Proxy Behavior</h2>
+
+        <details class="group">
+          <summary class="cursor-pointer font-medium" style="color: var(--gradient-from);">What happens when I close the browser?</summary>
+          <div class="mt-2 ml-4">
+            If the “Always connect to last used” setting is enabled, the extension will automatically reconnect to your last active proxy on startup.
+          </div>
+        </details>
+
+        <details class="group">
+          <summary class="cursor-pointer font-medium" style="color: var(--gradient-from);">Why does it say “Connected” when it's not working?</summary>
+          <div class="mt-2 ml-4">
+            This can happen if the proxy credentials are no longer valid. The extension will now test the proxy before fully connecting and retry up to 5 times before marking it as disconnected.
+          </div>
+        </details>
+
+        <details class="group">
+          <summary class="cursor-pointer font-medium" style="color: var(--gradient-from);">How does reconnecting work?</summary>
+          <div class="mt-2 ml-4">
+            When a connection fails, the extension will automatically retry up to <strong>5 times</strong> (with a 5-second delay between attempts). Toast messages will show retry progress and result.
+          </div>
+        </details>
+
+        <details class="group">
+          <summary class="cursor-pointer font-medium" style="color: var(--gradient-from);">How do I disconnect a proxy?</summary>
+          <div class="mt-2 ml-4">
+            Click the red <strong>Disconnect</strong> button in the popup. This will reset the proxy and clear authentication from cache and cookies.
+          </div>
+        </details>
+
+        <h2 class="text-lg font-semibold mt-6">Security & Storage</h2>
+
+        <details class="group">
+          <summary class="cursor-pointer font-medium" style="color: var(--gradient-from);">Where is my proxy data stored?</summary>
+          <div class="mt-2 ml-4">
+            All proxy information is securely stored using Chrome’s <code>storage.local</code> API. Nothing is uploaded or synced externally.
+          </div>
+        </details>
+
+        <details class="group">
+          <summary class="cursor-pointer font-medium" style="color: var(--gradient-from);">Is authentication info safe?</summary>
+          <div class="mt-2 ml-4">
+            Yes. Credentials are only used when establishing a proxy connection and are not stored beyond the session unless needed for reconnecting.
+          </div>
+        </details>
+
+        <details class="group">
+          <summary class="cursor-pointer font-medium" style="color: var(--gradient-from);">How do I clear proxy login prompts?</summary>
+          <div class="mt-2 ml-4">
+            If Chrome gets stuck on a login popup, click <strong>Disconnect</strong> in the extension. This clears cached credentials and resets the session.
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section id="tab-settings" class="hidden">
+      <h1 class="text-3xl font-bold mb-2" style="color: var(--text-primary);">Settings</h1>
+      <p class="mb-6" style="color: var(--text-secondary);">Configure extension behavior and preferences.</p>
+
+      <div class="p-6 rounded-xl border space-y-6" style="background-color: var(--bg-secondary); border-color: var(--border-primary); box-shadow: var(--shadow-sm);">
+        <div>
+          <h2 class="text-lg font-semibold mb-4" style="color: var(--text-primary);">Connection Settings</h2>
+          
+          <div class="space-y-4">
+            <label class="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" id="autoConnectLastUsed" class="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+              <div>
+                <div class="font-medium" style="color: var(--text-primary);">Auto-connect to last used proxy</div>
+                <div class="text-sm" style="color: var(--text-secondary);">Automatically connect to your last used proxy when Chrome starts</div>
+              </div>
+            </label>
+
+            <label class="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" id="showNotifications" class="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+              <div>
+                <div class="font-medium" style="color: var(--text-primary);">Show connection notifications</div>
+                <div class="text-sm" style="color: var(--text-secondary);">Display toast notifications for connection status changes</div>
+              </div>
+            </label>
+
+            <label class="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" id="clearCookiesOnDisconnect" class="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500" checked>
+              <div>
+                <div class="font-medium" style="color: var(--text-primary);">Clear cookies on disconnect</div>
+                <div class="text-sm" style="color: var(--text-secondary);">Remove cookies when disconnecting from a proxy for better privacy</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="border-t pt-6" style="border-color: var(--border-primary);">
+          <h2 class="text-lg font-semibold mb-4" style="color: var(--text-primary);">Advanced Settings</h2>
+          
+          <div class="space-y-4">
+            <div>
+              <label class="block font-medium mb-2" style="color: var(--text-primary);">Connection timeout (seconds)</label>
+              <input type="number" id="connectionTimeout" min="5" max="60" value="10" class="w-32 px-3 py-2 rounded-lg border" style="background-color: var(--bg-tertiary); color: var(--text-primary); border-color: var(--border-primary);">
+            </div>
+
+            <div>
+              <label class="block font-medium mb-2" style="color: var(--text-primary);">Max retry attempts</label>
+              <input type="number" id="maxRetries" min="0" max="10" value="1" class="w-32 px-3 py-2 rounded-lg border" style="background-color: var(--bg-tertiary); color: var(--text-primary); border-color: var(--border-primary);">
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end pt-4">
+          <button id="saveSettings" class="btn-primary px-6 py-2 rounded-lg text-white font-medium">Save Settings</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="border-t pt-6" style="border-color: var(--border-primary);">
+          <h2 class="text-lg font-semibold mb-3" style="color: var(--text-primary);">Features</h2>
+          <ul class="space-y-2 text-sm" style="color: var(--text-secondary);">
+            <li class="flex items-start gap-2">
+              <svg class="w-4 h-4 mt-0.5 flex-shrink-0" style="color: var(--gradient-from);" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>Support for HTTP and HTTPS proxies</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <svg class="w-4 h-4 mt-0.5 flex-shrink-0" style="color: var(--gradient-from);" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>Username/password authentication</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <svg class="w-4 h-4 mt-0.5 flex-shrink-0" style="color: var(--gradient-from);" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>Quick proxy switching from popup</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <svg class="w-4 h-4 mt-0.5 flex-shrink-0" style="color: var(--gradient-from);" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>Auto-reconnect with retry logic</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <svg class="w-4 h-4 mt-0.5 flex-shrink-0" style="color: var(--gradient-from);" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>Import/export proxy configurations</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <svg class="w-4 h-4 mt-0.5 flex-shrink-0" style="color: var(--gradient-from);" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>Dark mode support</span>
+            </li>
+          </ul>
+        </div>
+</div>
+    </section>
+  </main>
+
+  <div id="toast" class="fixed bottom-5 right-5 gradient-bg text-white px-4 py-2 rounded-lg shadow-lg hidden transition-opacity duration-300 z-50">
+    Changes saved successfully.
+  </div>
+</body>
+</html>

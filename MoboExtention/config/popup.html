@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>MoboVPN</title>
+    <script src="browser@4.js"></script>
+    <script src="popup.js" defer></script>
+    <style>
+        :root {
+            --bg-primary: #1a1b2e;
+            --bg-secondary: #16213e;
+            --bg-tertiary: #0f1419;
+            --bg-card: rgba(34, 43, 69, 0.8);
+            --text-primary: #ffffff;
+            --text-secondary: #b8c5d6;
+            --text-tertiary: #7b8794;
+            --accent-primary: #6c5ce7;
+            --accent-secondary: #a29bfe;
+            --success: #00b894;
+            --warning: #fdcb6e;
+            --danger: #e17055;
+            --border: rgba(255, 255, 255, 0.1);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            width: 380px;
+            height: 550px;
+            overflow: visible;
+            position: relative;
+            transition: height 0.3s ease, width 0.3s ease;
+        }
+        
+        body.connected {
+            height: 600px;
+        }
+        
+        body.selecting-proxy {
+            width: 475px;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #1a1b2e 0%, #16213e 50%, #0f1419 100%);
+            z-index: -1;
+        }
+
+        .header {
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo img {
+            display: block;
+            object-fit: contain;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .manage-header-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .manage-header-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-color: var(--accent-primary);
+        }
+        
+        .close-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .close-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--danger);
+            border-color: var(--danger);
+        }
+
+        .connection-status {
+            margin-bottom: 30px;
+        }
+
+        .status-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .status-text.connected {
+            color: var(--success);
+        }
+
+        .status-text.connecting {
+            color: var(--warning);
+        }
+
+        .connection-timer {
+            font-size: 32px;
+            font-weight: 300;
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+        }
+
+        .connection-circle {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .connection-circle:hover {
+            transform: scale(1.05);
+        }
+        
+        .connection-circle.connected {
+            animation: connectedGlow 4s ease-in-out infinite;
+        }
+        
+        @keyframes connectedGlow {
+            0%, 100% { 
+                transform: scale(1);
+                filter: brightness(1);
+            }
+            50% { 
+                transform: scale(1.02);
+                filter: brightness(1.1);
+            }
+        }
+
+        .circle-bg {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, var(--accent-primary), var(--accent-secondary), var(--accent-primary));
+            padding: 2px;
+            opacity: 0.3;
+            transition: all 0.3s ease;
+        }
+        
+        .connection-circle:hover .circle-bg {
+            opacity: 0.6;
+            padding: 3px;
+        }
+        
+        .connection-circle.connected .circle-bg {
+            opacity: 1;
+            background: conic-gradient(from 0deg, var(--success), #00d4aa, var(--success));
+        }
+
+        .circle-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-secondary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .circle-inner.connected {
+            background: linear-gradient(135deg, var(--success) 0%, #00a085 100%);
+            box-shadow: 0 0 50px rgba(0, 184, 148, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+
+        .circle-inner.connecting {
+            background: linear-gradient(135deg, var(--warning) 0%, #e67e22 100%);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .power-icon {
+            width: 36px;
+            height: 36px;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+        
+        .connection-circle:hover .power-icon {
+            transform: scale(1.1);
+        }
+
+        .circle-inner.connected .power-icon {
+            display: none;
+        }
+        
+        .zap-icon {
+            width: 36px;
+            height: 36px;
+            color: white;
+            display: none;
+            stroke: white;
+            fill: white;
+            stroke-width: 0;
+        }
+        
+        .circle-inner.connected .zap-icon {
+            display: block;
+            filter: drop-shadow(0 0 15px rgba(255, 255, 255, 1));
+            animation: zapAppear 0.5s ease-out, electricPulse 0.8s ease-in-out infinite 0.5s;
+        }
+        
+        .circle-inner.connected .power-icon {
+            display: none;
+        }
+        
+        @keyframes zapAppear {
+            0% { 
+                transform: scale(0); 
+                opacity: 0; 
+            }
+            50% { 
+                transform: scale(1.2); 
+            }
+            100% { 
+                transform: scale(1); 
+                opacity: 1; 
+            }
+        }
+        
+        @keyframes electricPulse {
+            0%, 100% { 
+                filter: drop-shadow(0 0 15px rgba(255, 255, 255, 1)) 
+                        drop-shadow(0 0 25px rgba(100, 200, 255, 0.8));
+                transform: scale(1);
+            }
+            25% {
+                filter: drop-shadow(0 0 20px rgba(255, 255, 255, 1)) 
+                        drop-shadow(0 0 35px rgba(100, 200, 255, 1))
+                        drop-shadow(0 0 45px rgba(200, 220, 255, 0.6));
+                transform: scale(1.05);
+            }
+            50% { 
+                filter: drop-shadow(0 0 25px rgba(255, 255, 255, 1)) 
+                        drop-shadow(0 0 40px rgba(150, 200, 255, 1))
+                        drop-shadow(0 0 50px rgba(200, 220, 255, 0.8));
+                transform: scale(1.08);
+            }
+            75% {
+                filter: drop-shadow(0 0 18px rgba(255, 255, 255, 1)) 
+                        drop-shadow(0 0 30px rgba(100, 200, 255, 0.9));
+                transform: scale(1.03);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .current-proxy {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            margin: 0 20px 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .proxy-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .proxy-info:hover {
+            transform: translateX(4px);
+        }
+
+        .proxy-details {
+            flex: 1;
+        }
+
+        .proxy-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .proxy-address {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            font-family: 'Courier New', monospace;
+        }
+
+        .proxy-flag {
+            width: 32px;
+            height: 24px;
+            border-radius: 4px;
+            background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .arrow-icon {
+            margin-left: 12px;
+            color: var(--text-tertiary);
+            width: 16px;
+            height: 16px;
+        }
+
+        .speed-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 0 20px 40px;
+            opacity: 0;
+            animation: fadeInUp 0.5s ease-out 0.3s forwards;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .speed-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .speed-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .speed-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .speed-unit {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-size: 13px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            transition: bottom 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            white-space: nowrap;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            bottom: 20px;
+        }
+
+        .loading {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .proxy-selection-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg-primary);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .proxy-selection-screen.show {
+            transform: translateX(0);
+        }
+
+        .selection-header {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .back-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .selection-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .proxy-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 20px 20px;
+        }
+
+        .proxy-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .proxy-item:hover:not(.premium-locked) {
+            border-color: var(--accent-primary);
+            transform: translateY(-1px);
+        }
+
+        .proxy-item.premium-locked {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .proxy-item-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .proxy-item .proxy-flag {
+            width: 32px;
+            height: 24px;
+            border-radius: 4px;
+            background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .proxy-item .proxy-details {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .proxy-country {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 180px;
+        }
+
+        .proxy-locations {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 180px;
+        }
+
+        .proxy-ping {
+            font-size: 12px;
+            color: var(--success);
+            font-weight: 600;
+            margin-right: 12px;
+        }
+
+        .connect-btn {
+            background: var(--gradient);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            min-width: 80px;
+        }
+
+        .connect-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+        }
+
+        .premium-lock {
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            padding: 6px;
+            color: var(--text-tertiary);
+        }
+
+        #ip-refresh-container {
+            display: flex;
+            flex-direction: column; /* Changed to column for vertical alignment */
+            align-items: center;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        
+        #ip-info-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #ipRefreshBtn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #ipRefreshBtn svg {
+            color: var(--text-secondary);
+            transition: transform 0.3s ease;
+        }
+
+        #ipRefreshBtn:hover svg {
+            color: var(--text-primary);
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="header-top">
+            <div class="logo">
+                <img src="banner_wide.png" alt="MoboVPN" style="height: 62px; width: auto;">
+            </div>
+            <div class="header-controls">
+                <button class="manage-header-btn" id="manageHeaderBtn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                    <span>Manage</span>
+                </button>
+                <button class="close-btn" id="closeBtn" title="Close">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="connection-status">
+            <div id="statusText" class="status-text">● Disconnect</div>
+            <div id="connectionTimer" class="connection-timer">00:00:00</div>
+        </div>
+        
+        <div id="ip-refresh-container" class="hidden">
+            <div id="ip-info-wrapper">
+                <div id="ipAddressDisplay" style="font-size: 14px; font-weight: 500; color: var(--text-secondary);">IP: </div>
+                <button id="ipRefreshBtn" title="Refresh IP">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2.5 6a10 10 0 1 1 0 12M21.5 18a10 10 0 1 0 0-12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div id="locationDisplay" style="font-size: 12px; font-weight: 400; color: var(--text-tertiary);">Location: </div>
+        </div>
+    </div>
+
+    <div class="connection-circle" id="connectionButton">
+        <div class="circle-bg">
+            <div class="circle-inner" id="circleInner">
+                <svg class="power-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18.36 6.64A9 9 0 1 1 5.64 6.64"/>
+                    <line x1="12" y1="2" x2="12" y2="12"/>
+                </svg>
+                <svg class="zap-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <div class="current-proxy" id="currentProxy">
+        <div class="proxy-info" id="proxySelector">
+            <div class="proxy-details">
+                <div class="proxy-name" id="proxyName">United States</div>
+                <div class="proxy-address" id="proxyAddress">proxy.example.com:8080</div>
+            </div>
+            <div class="proxy-flag" id="proxyFlag">🇺🇸</div>
+            <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9,18 15,12 9,6"/>
+            </svg>
+        </div>
+    </div>
+
+    <div class="proxy-selection-screen hidden" id="proxySelectionScreen">
+        <div class="selection-header">
+            <button class="back-btn" id="backBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15,18 9,12 15,6"/>
+                </svg>
+            </button>
+            <h2 class="selection-title">Select Proxy</h2>
+        </div>
+
+        <div class="proxy-list" id="proxyList">
+            <div class="proxy-item" data-country="United States" data-flag="🇺🇸" data-address="us1.proxy.com:8080" data-ping="45ms">
+                <div class="proxy-item-content">
+                    <div class="proxy-details">
+                        <div class="proxy-country">United States</div>
+                        <div class="proxy-locations">8 Locations</div>
+                    </div>
+                    <div class="proxy-ping">45ms</div>
+                </div>
+                <button class="connect-btn">Connect</button>
+            </div>
+
+            <div class="proxy-item" data-country="Germany" data-flag="🇩🇪" data-address="de1.proxy.com:8080" data-ping="32ms">
+                <div class="proxy-item-content">
+                    <div class="proxy-details">
+                        <div class="proxy-country">Germany</div>
+                        <div class="proxy-locations">6 Locations</div>
+                    </div>
+                    <div class="proxy-ping">32ms</div>
+                </div>
+                <button class="connect-btn">Connect</button>
+            </div>
+
+            <div class="proxy-item" data-country="Singapore" data-flag="🇸🇬" data-address="sg1.proxy.com:8080" data-ping="28ms">
+                <div class="proxy-item-content">
+                    <div class="proxy-details">
+                        <div class="proxy-country">Singapore</div>
+                        <div class="proxy-locations">4 Locations</div>
+                    </div>
+                    <div class="proxy-ping">28ms</div>
+                </div>
+                <button class="connect-btn">Connect</button>
+            </div>
+
+            <div class="proxy-item premium-locked" data-premium="true">
+                <div class="proxy-item-content">
+                    <div class="proxy-details">
+                        <div class="proxy-country">Japan</div>
+                        <div class="proxy-locations">12 Locations</div>
+                    </div>
+                    <div class="proxy-ping">18ms</div>
+                </div>
+                <div class="premium-lock">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                        <path d="M12 1v6"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="proxy-item premium-locked" data-premium="true">
+                <div class="proxy-item-content">
+                    <div class="proxy-details">
+                        <div class="proxy-country">United Kingdom</div>
+                        <div class="proxy-locations">15 Locations</div>
+                    </div>
+                    <div class="proxy-ping">25ms</div>
+                </div>
+                <div class="premium-lock">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                        <path d="M12 1v6"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="proxy-item premium-locked" data-premium="true">
+                <div class="proxy-item-content">
+                    <div class="proxy-details">
+                        <div class="proxy-country">France</div>
+                        <div class="proxy-locations">10 Locations</div>
+                    </div>
+                    <div class="proxy-ping">35ms</div>
+                </div>
+                <div class="premium-lock">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                        <path d="M12 1v6"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="speed-stats" id="speedStats">
+        <div class="speed-card">
+            <div class="speed-label">↓ Download</div>
+            <div class="speed-value">0 <span class="speed-unit">Mbps</span></div>
+        </div>
+        <div class="speed-card">
+            <div class="speed-label">↑ Upload</div>
+            <div class="speed-value">0 <span class="speed-unit">Mbps</span></div>
+        </div>
+    </div>
+
+    
+    <div id="toast" class="toast"></div>
+
+</body>
+
+</html>
