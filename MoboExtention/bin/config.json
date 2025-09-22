@@ -30,11 +30,11 @@
       "settings": {
         "vnext": [
           {
-            "address": "mseu.fastspeed.cfd",
+            "address": "",
             "port": 1001,
             "users": [
               {
-                "id": "e536d289-d980-4961-a253-b097c299aa46",
+                "id": "",
                 "email": "t@t.tt",
                 "security": "auto",
                 "encryption": "none"
@@ -64,6 +64,7 @@
     }
   ]
 }
+
 
 
 
