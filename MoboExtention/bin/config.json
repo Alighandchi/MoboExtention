@@ -34,7 +34,7 @@
             "port": 1001,
             "users": [
               {
-                "id": "",
+                "id": "e536d289-d980-4961-a253-b097c299aa46",
                 "email": "t@t.tt",
                 "security": "auto",
                 "encryption": "none"
@@ -64,6 +64,13 @@
     }
   ]
 }
+
+
+
+
+
+
+
 
 
 

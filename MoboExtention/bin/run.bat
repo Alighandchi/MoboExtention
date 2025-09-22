@@ -1,4 +1,3 @@
-@echo off
-cd /d "%~dp0\bin"
-start /b v2ray.exe run -config=config.json
+cd /d "%~dp0"
+wxray.exe run -config=config.json
 @REM cmd.exe /K
